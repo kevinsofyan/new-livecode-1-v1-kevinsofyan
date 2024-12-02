@@ -1,4 +1,4 @@
-package orders
+package handlers
 
 import (
 	"encoding/json"
