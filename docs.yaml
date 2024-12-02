@@ -1,0 +1,250 @@
+openapi: "3.0.0"
+info:
+  title: "FTGO Phase 2 Livecode 1 API Contract"
+  description: "Pastikan semua endpoint pada livecode mengikuti ketentuan yang tercantum pada dokumen ini. Tanyakan pada instruktur/tim akademik yang bertugas jika ada hal yang perlu diklarifikasi dan ditanyakan. Kesalahan pemahaman requirement bisa mengakibatkan pengurangan nilai livecode"
+  version: "1.0"
+  contact:
+    name: "FTGO Academic Team"
+servers:
+  - url: "http://localhost:8080"
+    description: "development/livecode"
+paths:
+  '/orders':
+    get:
+      tags:
+        - order
+      summary: "menampilkan semua data orders"
+      description: "menampilkan semua data orders yang terdapat pada database"
+      responses:
+        200:
+          description: "response sukses menampilkan semua data orders"
+          content:
+            application/json:
+              schema:
+                type: "array"
+                items:
+                  type: "object"
+                  properties:
+                    id:
+                      type: "number"
+                      format: "int32"
+                    buyer_name:
+                      type: "string"
+                      default: "Example name"
+                    store_name:
+                      type: "string"
+                      default: "Example name"
+                    item_name:
+                      type: "string"
+                      default: "Example item name"
+                    item_qty:
+                      type: "number"
+                      format: "int32"
+                      default: 1
+                    created_at:
+                      type: "string"
+                      format: "date"
+                      default: "2017-07-21"
+        500:
+          $ref: '#/components/responses/internalServerError'
+    post:
+      tags:
+        - order
+      summary: "membuat data order baru"
+      description: "membuat data order baru berdasarkan input"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/requestOrder'
+      responses:
+        201:
+          description: "response berhasil membuat data shipment baru"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                properties:
+                  message:
+                    type: "string"
+                    default: "success create"
+                  shipment:
+                    type: "object"
+                    properties:
+                      id:
+                        type: "number"
+                        format: "int32"
+                      buyer_name:
+                        type: "string"
+                        default: "Example name"
+                      store_name:
+                        type: "string"
+                        default: "Example name"
+                      item_name:
+                        type: "string"
+                        default: "Example item name"
+                      item_qty:
+                        type: "number"
+                        format: "int32"
+                        default: 1
+                      created_at:
+                        type: "string"
+                        format: "date"
+                        default: "2017-07-21"
+
+        500:
+          $ref: '#/components/responses/internalServerError'
+        400:
+          $ref: '#/components/responses/badRequest'
+  
+  '/orders/:id':
+    get:
+      tags:
+        - order      
+      summary: "menampilkan data order berdasarkan ID"
+      description: "menampilkan data order berdasarkan parameter ID"
+      parameters:
+        - $ref: '#/components/parameters/orderId'
+      responses:
+        200:
+          $ref: '#/components/responses/order'
+        500:
+          $ref: '#/components/responses/internalServerError'
+        404:
+          $ref: '#/components/responses/notFound'
+    put:
+      tags:
+        - order
+      summary: "memperbaharui data order berdasarkan ID"
+      description: "memperbaharui data order berdasarkan parameter ID dan input pada request body"
+      parameters:
+        - $ref: '#/components/parameters/orderId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/requestOrder'
+      responses:
+        500:
+          $ref: '#/components/responses/internalServerError'
+        404:
+          $ref: '#/components/responses/notFound'
+        400:
+          $ref: '#/components/responses/badRequest'
+    delete:
+      tags:
+        - order
+      summary: "menghapus data order berdasarkan ID"
+      description: "menghapus data order berdasarkan parameter ID"
+      parameters:
+        - $ref: '#/components/parameters/orderId'
+      responses:
+        500:
+          $ref: '#/components/responses/internalServerError'
+        404:
+          $ref: '#/components/responses/notFound'
+
+components:
+  parameters:
+    orderId:
+      name: "id"
+      in: "path"
+      description: "parameter id akan yang akan digunakan untuk keperluan action pada endpoint"
+      required: true
+      schema:
+        type: "number"
+  schemas:
+    requestOrder:
+      required:
+        - "buyer_name"
+        - "store_name"
+        - "item_name"
+        - "item_qty"
+      properties:
+        buyer_name:
+          type: "string"
+          default: "Example name"
+        store_name:
+          type: "string"
+          default: "Example name"
+        item_name:
+          type: "string"
+          default: "Example item name"
+        item_qty:
+          type: "number"
+          format: "int32"
+          default: 1
+  responses:
+    internalServerError:
+      description: "internal server error; semua error lain seperti error bad request dan error not found"
+      content:
+        application/json:
+          schema:
+            type: "object"
+            properties:
+              message:
+                type: "string"
+              detail:
+                type: "string"
+          example:
+            message: "internal server error"
+            detail: "error generated from err.Error() object"
+    badRequest:
+      description: "bad request error"
+      content:
+        application/json:
+          schema:
+            type: "object"
+            properties:
+              message:
+                type: "string"
+          example:
+            message: "example error: name is required"
+    notFound:
+      description: "not found error"
+      content:
+        application/json:
+          schema:
+            type: "object"
+            properties:
+              message:
+                type: "string"
+          example:
+            message: "order with ID [id] not found"
+    order:
+      description: "data orders"
+      content:
+        application/json:
+          schema:
+            type: "object"
+            properties:
+              id:
+                type: "number"
+                format: "int32"
+              buyer_name:
+                type: "string"
+                default: "Example name"
+              store_name:
+                type: "string"
+                default: "Example name"
+              item_name:
+                type: "string"
+                default: "Example item name"
+              item_qty:
+                type: "number"
+                format: "int32"
+                default: 1
+              created_at:
+                type: "string"
+                format: "date"
+                default: "2017-07-21"
+          example:
+            id: 1
+            buyer_name: "Example Name"
+            store_name: "Example Name"
+            item_name: "Example item name"
+            item_qty: 1
+            created_at: "2017-07-21"
+      
