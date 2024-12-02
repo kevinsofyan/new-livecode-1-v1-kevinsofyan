@@ -1,4 +1,4 @@
-package products
+package orders
 
 import (
 	"database/sql"
