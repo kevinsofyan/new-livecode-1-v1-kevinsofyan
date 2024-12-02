@@ -4,15 +4,16 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"time"
 )
 
 type Orders struct {
-	ID        int    `json:"id"`
-	BuyerName string `json:"buyer_name"`
-	StoreName string `json:"store_name"`
-	ItemName  int    `json:"item_name"`
-	ItemQty   int    `json:"item_qty"`
-	CreatedAt int    `json:"created_at"`
+	ID        int       `json:"id"`
+	BuyerName string    `json:"buyer_name"`
+	StoreName string    `json:"store_name"`
+	ItemName  string    `json:"item_name"`
+	ItemQty   int       `json:"item_qty"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 type OrdersRepository struct {
@@ -24,7 +25,6 @@ func NewOrdersRepository(db *sql.DB) *OrdersRepository {
 }
 
 func (or *OrdersRepository) GetAll() ([]Orders, error) {
-
 	rows, err := or.DB.Query("SELECT id, buyer_name, store_name, item_name, item_qty, created_at FROM orders")
 	if err != nil {
 		return nil, err
@@ -45,7 +45,7 @@ func (or *OrdersRepository) GetAll() ([]Orders, error) {
 
 func (or *OrdersRepository) GetByID(id int) (*Orders, error) {
 	var o Orders
-	err := or.DB.QueryRow("SELECT id, buyer_name, store_name, item_name, item_qtym created_at FROM orders where id = ?", id).Scan(&o.ID, &o.BuyerName, &o.StoreName, &o.ItemName, &o.ItemQty, &o.CreatedAt)
+	err := or.DB.QueryRow("SELECT id, buyer_name, store_name, item_name, item_qty, created_at FROM orders where id = ?", id).Scan(&o.ID, &o.BuyerName, &o.StoreName, &o.ItemName, &o.ItemQty, &o.CreatedAt)
 
 	if err == sql.ErrNoRows {
 		return nil, errors.New("Order not found")
@@ -58,7 +58,7 @@ func (or *OrdersRepository) GetByID(id int) (*Orders, error) {
 
 func (or *OrdersRepository) Create(o *Orders) error {
 	result, err := or.DB.Exec(
-		"INSERT INTO products (buyer_name, store_name, item_name, item_qtym, created_at) (?, ?, ?, ?, NOW())",
+		"INSERT INTO orders (buyer_name, store_name, item_name, item_qty, created_at) VALUES (?, ?, ?, ?, NOW())",
 		o.BuyerName, o.StoreName, o.ItemName, o.ItemQty,
 	)
 	if err != nil {
@@ -98,7 +98,7 @@ func (or *OrdersRepository) Delete(id int) error {
 	}
 
 	if rowsAffected == 0 {
-		return errors.New("product not found")
+		return errors.New("order not found")
 	}
 
 	return nil

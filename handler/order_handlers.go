@@ -72,19 +72,37 @@ func (h *OrdersHandler) CreateOrders(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	orders, err := h.Repo.JSONdecode(body)
-	if err != nil {
+	var order orders.Orders
+	if err := json.Unmarshal(body, &order); err != nil {
 		h.handleError(w, "error parsing orders data", err, http.StatusBadRequest)
 		return
 	}
 
-	if err := h.Repo.Create(orders); err != nil {
+	// Validate required fields
+	if order.BuyerName == "" {
+		h.handleError(w, "buyer_name is required", fmt.Errorf("buyer_name is required"), http.StatusBadRequest)
+		return
+	}
+	if order.StoreName == "" {
+		h.handleError(w, "store_name is required", fmt.Errorf("store_name is required"), http.StatusBadRequest)
+		return
+	}
+	if order.ItemName == "" {
+		h.handleError(w, "item_name is required", fmt.Errorf("item_name is required"), http.StatusBadRequest)
+		return
+	}
+	if order.ItemQty == 0 {
+		h.handleError(w, "item_qty is required", fmt.Errorf("item_qty is required"), http.StatusBadRequest)
+		return
+	}
+
+	if err := h.Repo.Create(&order); err != nil {
 		h.handleError(w, "internal server error", err, http.StatusInternalServerError)
 		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(orders)
+	json.NewEncoder(w).Encode(order)
 }
 
 func (h *OrdersHandler) UpdateOrders(w http.ResponseWriter, r *http.Request, id int) {
