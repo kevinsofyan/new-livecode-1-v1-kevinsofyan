@@ -58,7 +58,7 @@ func (or *OrdersRepository) GetByID(id int) (*Orders, error) {
 
 func (or *OrdersRepository) Create(o *Orders) error {
 	result, err := or.DB.Exec(
-		"INSERT INTO products (buyer_name, store_name, item_name, item_qtym created_at) (?, ?, ?, ?, NOW())",
+		"INSERT INTO products (buyer_name, store_name, item_name, item_qtym, created_at) (?, ?, ?, ?, NOW())",
 		o.BuyerName, o.StoreName, o.ItemName, o.ItemQty,
 	)
 	if err != nil {

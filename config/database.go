@@ -5,7 +5,6 @@ import (
 	"log"
 	"os"
 
-	"github.com/go-sql-driver/mysql"
 	_ "github.com/go-sql-driver/mysql"
 )
 
@@ -13,14 +12,13 @@ var DB *sql.DB
 
 func ConnectDB() (*sql.DB, error) {
 	var err error
-	cfg := mysql.Config{
-		User:   os.Getenv("DB_USER"),
-		Passwd: os.Getenv("DB_PASS"),
-		Net:    "tcp",
-		Addr:   os.Getenv("DB_HOST"),
-		DBName: os.Getenv("DB_NAME"),
+
+	dsn := os.Getenv("DB_CONNECTION_STRING")
+	if dsn == "" {
+		log.Fatal("DB_CONNECTION_STRING environment variable is not set")
 	}
-	DB, err := sql.Open("mysql", cfg.FormatDSN())
+
+	DB, err = sql.Open("mysql", dsn)
 	if err != nil {
 		log.Print("Error connecting to the database: ", err)
 		log.Fatal(err)
@@ -32,15 +30,17 @@ func ConnectDB() (*sql.DB, error) {
 	}
 
 	_, err = DB.Exec(`
-		CREATE TABLE IF NOT EXISTS orders (
-			id INT AUTO_INCREMENT PRIMARY KEY,
-			name VARCHAR(255) NOT NULL,
-			description TEXT,
-			price INT NOT NULL
-		)
-	`)
+        CREATE TABLE IF NOT EXISTS orders (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            buyer_name VARCHAR(255) NOT NULL,
+            store_name VARCHAR(255) NOT NULL,
+            item_name VARCHAR(255) NOT NULL,
+            item_qty INT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    `)
 	if err != nil {
-		log.Fatalf("Error creating products table: %v", err)
+		log.Fatalf("Error creating orders table: %v", err)
 	}
 
 	log.Print("Connected to the database")

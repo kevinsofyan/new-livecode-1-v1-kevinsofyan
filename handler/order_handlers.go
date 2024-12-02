@@ -48,7 +48,7 @@ func (h *OrdersHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (h *OrdersHandler) GetAllOrders(w http.ResponseWriter, r *http.Request) {
 	orders, err := h.Repo.GetAll()
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		h.handleError(w, "internal server error", err, http.StatusInternalServerError)
 		return
 	}
 
@@ -58,7 +58,7 @@ func (h *OrdersHandler) GetAllOrders(w http.ResponseWriter, r *http.Request) {
 func (h *OrdersHandler) GetOrdersByID(w http.ResponseWriter, r *http.Request, id int) {
 	orders, err := h.Repo.GetByID(id)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
+		h.handleError(w, "order not found", err, http.StatusNotFound)
 		return
 	}
 
@@ -68,20 +68,18 @@ func (h *OrdersHandler) GetOrdersByID(w http.ResponseWriter, r *http.Request, id
 func (h *OrdersHandler) CreateOrders(w http.ResponseWriter, r *http.Request) {
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		http.Error(w, "Error reading request body", http.StatusBadRequest)
+		h.handleError(w, "error reading request body", err, http.StatusBadRequest)
 		return
 	}
 
 	orders, err := h.Repo.JSONdecode(body)
 	if err != nil {
-		log.Print(err)
-		http.Error(w, "Error parsing product data", http.StatusBadRequest)
+		h.handleError(w, "error parsing orders data", err, http.StatusBadRequest)
 		return
 	}
 
 	if err := h.Repo.Create(orders); err != nil {
-		log.Print(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		h.handleError(w, "internal server error", err, http.StatusInternalServerError)
 		return
 	}
 
@@ -91,25 +89,25 @@ func (h *OrdersHandler) CreateOrders(w http.ResponseWriter, r *http.Request) {
 
 func (h *OrdersHandler) UpdateOrders(w http.ResponseWriter, r *http.Request, id int) {
 	if id == 0 {
-		http.Error(w, "Invalid product ID", http.StatusBadRequest)
+		h.handleError(w, "invalid order ID", fmt.Errorf("invalid order ID"), http.StatusBadRequest)
 		return
 	}
 
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		http.Error(w, "Error reading request body", http.StatusBadRequest)
+		h.handleError(w, "error reading request body", err, http.StatusBadRequest)
 		return
 	}
 
 	orders, err := h.Repo.JSONdecode(body)
 	if err != nil {
-		http.Error(w, "Error parsing product data", http.StatusBadRequest)
+		h.handleError(w, "error parsing order data", err, http.StatusBadRequest)
 		return
 	}
 
 	orders.ID = id
 	if err := h.Repo.Update(orders); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		h.handleError(w, "internal server error", err, http.StatusInternalServerError)
 		return
 	}
 
@@ -118,15 +116,27 @@ func (h *OrdersHandler) UpdateOrders(w http.ResponseWriter, r *http.Request, id 
 
 func (h *OrdersHandler) DeleteOrders(w http.ResponseWriter, r *http.Request, id int) {
 	if id == 0 {
-		http.Error(w, "Invalid Orders ID", http.StatusBadRequest)
+		h.handleError(w, "invalid order ID", fmt.Errorf("invalid order ID"), http.StatusBadRequest)
 		return
 	}
 
 	if err := h.Repo.Delete(id); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		h.handleError(w, "internal server error", err, http.StatusInternalServerError)
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprintf(w, `{"message": "Order deleted successfully"}`)
+}
+
+func (h *OrdersHandler) handleError(w http.ResponseWriter, message string, err error, statusCode int) {
+	log.Print(err)
+	w.WriteHeader(statusCode)
+	response := map[string]interface{}{
+		"message": message,
+	}
+	if statusCode == http.StatusInternalServerError {
+		response["detail"] = err.Error()
+	}
+	json.NewEncoder(w).Encode(response)
 }
